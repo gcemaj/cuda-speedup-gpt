@@ -108,10 +108,10 @@ class Driver:
                 free_gpu="",#free_gpu,
             )
 
-            with open("dummy.cu", "w") as src_file:
+            with open("/home/gc2728/3033-025/cuda-speedup-gpt/cuda-code/dummy.cu", "w") as src_file:
                 src_file.write(source_code)
 
-            subprocess.call("nvcc -o dummy ./dummy.cu")
+            subprocess.run("nvcc -o /home/gc2728/3033-025/cuda-speedup-gpt/cuda-code/dummy /home/gc2728/3033-025/cuda-speedup-gpt/cuda-code/dummy.cu", shell=True)
 
             calls = []
             match max_size:
@@ -121,8 +121,8 @@ class Driver:
                         [100, 100, 100, 100, 1, 1, 1],
                         [100, 10, 10, 10, 10, 10, 10],
                         [100, 1, 1, 1, 100, 100, 100],
-                        [10000, 10000, 10000, 10000, 1, 1, 1],
-                        [10000, 1000, 1000, 1000, 10, 10, 10],
+                        [200, 200, 200, 200, 1, 1, 1],
+                        [200, 20, 20, 20, 10, 10, 10],
                     ]
                 case 2:
                     calls = [
@@ -130,13 +130,11 @@ class Driver:
                         [100, 100, 100, 1, 1, 1, 1],
                         [100, 10, 10, 1, 10, 10, 1],
                         [100, 1, 1, 1, 100, 100, 1],
-                        [10000, 10000, 10000, 1, 1, 1, 1],
-                        [10000, 1000, 1000, 1, 10, 10, 1],
-                        [10000, 100, 100, 1, 100, 100, 1],
-                        [100000, 10000, 10000, 1, 10, 10, 1],
-                        [100000, 1000, 1000, 1, 100, 10, 1],
-                        [100000, 100, 100, 1, 1000, 1000, 1],
-                        [100000, 1000, 1000, 1, 100, 100, 1],
+                        [1000, 1000, 1000, 1, 1, 1, 1],
+                        [1000, 100, 100, 1, 10, 10, 1],
+                        [5000, 5000, 5000, 1, 1, 1, 1],
+                        [5000, 500, 500, 1, 10, 10, 1],
+                        [5000, 50, 50, 1, 100, 100, 1],
                     ]
                 case 1:
                     calls = [
@@ -153,19 +151,22 @@ class Driver:
                         [100000, 1000, 1, 1, 100, 1, 1],
                     ]
             for call in calls:
-                child = subprocess.Popen(["./dummy"] + call, stdout=subprocess.PIPE, shell=True)
-                msg, _ = child.communicate()
-                [cpu_time, gpu_time, errs] = msg.split("\n")
+                print(["/home/gc2728/3033-025/cuda-speedup-gpt/cuda-code/dummy"] + [f"{i}" for i in call])
+                try:
+                    msg = subprocess.check_output(["/home/gc2728/3033-025/cuda-speedup-gpt/cuda-code/dummy"] + [f"{i}" for i in call], timeout=100)
+                    [cpu_time, gpu_time, errs, _] = msg.decode().split("\n")
 
-                data.append(
-                    ExecutionPoint(
-                        gpu,
-                        cpu,
-                        cpu_time.split("=")[1],
-                        gpu_time.split("=")[1],
-                        errs.split("=")[1],
-                        *call
+                    data.append(
+                        ExecutionPoint(
+                            gpu,
+                            cpu,
+                            cpu_time.split("=")[1],
+                            gpu_time.split("=")[1],
+                            errs.split("=")[1],
+                            *call
+                        )
                     )
-                )
+                except subprocess.TimeoutExpired:
+                    print("TIMEOUT")
         pd.DataFrame(data=data).to_csv("cuda_speedup.csv")
 

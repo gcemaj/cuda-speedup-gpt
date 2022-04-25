@@ -60,6 +60,7 @@ def generate_variable(variable_list: List[Variable], index_variable_list : List[
             return f"{var}[index3D({idx_1}, {idx_2}, {idx_3}, N)]", f"{var}[index3D(tx, ty, tz, 1024)]"
         case VariableType.ARRAY_INPUT | VariableType.ARRAY_OUTPUT, _:
             return f"{var}[{index_variable_list[0]}]", f"{var}[index3D(tx, ty, tz, 1024)]"
+    return None, None
 
 class Operators(Enum):
     ADD = 0
